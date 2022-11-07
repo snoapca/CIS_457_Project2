@@ -1,0 +1,9 @@
+Objective: Extend the concurrent server program (server.c) and client program (client.c) to support client to client communication through the server processes. 
+
+Deliverables: Source code with your additions highlighted and screenshots to prove the results. Copy source code and screenshots to a word file for submission. 
+
+Group Size: 1 to 3 students. You are responsible for forming the group. Email me names of group members by Oct 18th. One email per group.
+
+Evaluation: Grade depends on the objectives achieved and anonymous survey be your team members.
+
+Note: As demostrated and explained in class no need to enter port number for server and clients.
