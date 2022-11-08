@@ -9,6 +9,8 @@
 #define MAXLINE 4096 /*max text line length*/
 #define SERV_PORT 3000 /*port*/
 #define LISTENQ 8 /*maximum number of client connections*/
+#define READ 0
+#define WRITE 1
 
 int main (int argc, char **argv)
 {
@@ -17,6 +19,9 @@ int main (int argc, char **argv)
  socklen_t clilen;
  char buf[MAXLINE];
  struct sockaddr_in cliaddr, servaddr;
+
+ //Pipes
+ int fd[2];
 
  //Create a socket for the server
  //If sockfd<0 there was an error in the creation of the socket
@@ -54,11 +59,23 @@ int main (int argc, char **argv)
     //close listening socket
     close (listenfd);
 
+
+
     while ( (n = recv(connfd, buf, MAXLINE,0)) > 0)  {
-      printf("%s","String received from and resent to the client:");
-      puts(buf);
+
+      printf("%s","String received from the client:");
+      puts(buf); //Buf will not be what was recieved instead it will be any return message
+
+      //Send recieved string through pipe to other child
+      //
+      //
+
       send(connfd, buf, n, 0);
     }
+
+      //Recieve any data sent through pipe and send it back to the client
+      //
+      //
 
     if (n < 0)
       printf("%s\n", "Read error");
