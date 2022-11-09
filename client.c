@@ -5,9 +5,12 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 #define MAXLINE 4096 /*max text line length*/
 #define SERV_PORT 3000 /*port*/
+
+void reciveFromSocket(int sockfd);
 
 int
 main(int argc, char **argv) 
@@ -41,19 +44,39 @@ main(int argc, char **argv)
   perror("Problem in connecting to the server");
   exit(3);
  }
-	
+
+ pid_t childPID = fork();
+ if(childPID == 0)
+ {
+    reciveFromSocket(sockfd);
+    exit(0);
+ }
  while (fgets(sendline, MAXLINE, stdin) != NULL) {
 	
   send(sockfd, sendline, strlen(sendline), 0);
-		
-  if (recv(sockfd, recvline, MAXLINE,0) == 0){
-   //error: server terminated prematurely
-   perror("The server terminated prematurely"); 
-   exit(4);
-  }
-  printf("%s", "String received from the server: ");
-  fputs(recvline, stdout);
+//   if (recv(sockfd, recvline, MAXLINE,0) == 0){
+//    //error: server terminated prematurely
+//    perror("The server terminated prematurely"); 
+//    exit(4);
+//   }
+//   printf("%s", "String received from the server: ");
+//   fputs(recvline, stdout);
  }
 
  exit(0);
+}
+
+void reciveFromSocket(int sockfd)
+{
+   while(1)
+   {
+      char str[MAXLINE] = "";
+      if(recv(sockfd, str, MAXLINE,0) != 0)
+      {
+         printf("%s","Message from Client: ");
+         puts(str);
+      }
+   }
+   
+
 }

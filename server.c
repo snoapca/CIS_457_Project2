@@ -5,12 +5,17 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #define MAXLINE 4096 /*max text line length*/
 #define SERV_PORT 3000 /*port*/
 #define LISTENQ 8 /*maximum number of client connections*/
 #define READ 0
 #define WRITE 1
+
+bool hasData = false;
+
+void readFromPipe(int fd[], int connfd);
 
 int main (int argc, char **argv)
 {
@@ -19,9 +24,13 @@ int main (int argc, char **argv)
  socklen_t clilen;
  char buf[MAXLINE];
  struct sockaddr_in cliaddr, servaddr;
+ int count = 0;
 
  //Pipes
- int fd[2];
+ int fd1[2];
+ int fd2[2];
+ pipe(fd1);
+ pipe(fd2);
 
  //Create a socket for the server
  //If sockfd<0 there was an error in the creation of the socket
@@ -51,31 +60,53 @@ int main (int argc, char **argv)
   connfd = accept (listenfd, (struct sockaddr *) &cliaddr, &clilen);
 
   printf("%s\n","Received request...");
-
+  count++;
   if ( (childpid = fork ()) == 0 ) {//if it’s 0, it’s child process
-
+    int childPID;
     printf ("%s\n","Child created for dealing with client requests");
 
     //close listening socket
     close (listenfd);
 
-
-
-    while ( (n = recv(connfd, buf, MAXLINE,0)) > 0)  {
-
-      printf("%s","String received from the client:");
-      puts(buf); //Buf will not be what was recieved instead it will be any return message
-
-      //Send recieved string through pipe to other child
-      //
-      //
-
-      send(connfd, buf, n, 0);
+    //Creating a new child for reading data from the pipe
+    childPID = fork();
+    if(childPID == 0)//Child
+    {
+      if(count == 1)
+      {
+        readFromPipe(fd2, connfd);
+      }
+      else
+      {
+        readFromPipe(fd1, connfd);
+      }
+      exit(0);
     }
 
-      //Recieve any data sent through pipe and send it back to the client
-      //
-      //
+    while ( (n = recv(connfd, buf, MAXLINE,0)) > 0)   {
+
+      printf("%s","String received from the client:");
+      puts(buf);
+
+      if(count == 1)
+      {
+        //Writing the data to the pipe
+        close(fd1[READ]);
+        write(fd1[WRITE], buf, strlen(buf) + 1);
+
+        //send(connfd, buf, n, 0); //Send message stating string recieved
+      }
+      else if(count == 2)
+      {
+        //Writing the data to the pipe
+        close(fd2[READ]);
+        write(fd2[WRITE], buf, strlen(buf) + 1);
+        
+        //send(connfd, buf, n, 0); //Send message stating string recieved
+      }
+      
+      strcpy(buf,"");
+    }
 
     if (n < 0)
       printf("%s\n", "Read error");
@@ -86,4 +117,15 @@ int main (int argc, char **argv)
  
  }
 
+}
+
+void readFromPipe(int fd[], int connfd)
+{
+  while(1)
+  {
+    char str[MAXLINE] = "";
+    close(fd[WRITE]);
+    int n = read(fd[READ], &str, sizeof(str));
+    send(connfd, str, n, 0); //Send message stating string recieved
+  }
 }
